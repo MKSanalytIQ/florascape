@@ -16,12 +16,23 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 // Enable JSON bodies with higher limit for image base64 transfers
 app.use(express.json({ limit: '35mb' }));
 
-const apiKey = process.env.GEMINI_API_KEY;
-let ai: GoogleGenAI | null = null;
+// Enable CORS for local, container, or Vercel serverless deployments
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
-if (apiKey) {
-  ai = new GoogleGenAI({
-    apiKey,
+// Dynamic Gemini client resolution (supports live env updates in serverless runtime)
+function getAIClient(): GoogleGenAI | null {
+  const currentKey = process.env.GEMINI_API_KEY;
+  if (!currentKey) return null;
+  return new GoogleGenAI({
+    apiKey: currentKey,
     httpOptions: {
       headers: {
         'User-Agent': 'aistudio-build',
@@ -31,10 +42,24 @@ if (apiKey) {
 }
 
 // ----------------------------------------------------
+// Health Check Endpoint (useful for Vercel / Cloud Run)
+// ----------------------------------------------------
+app.get('/api/health', (_req: Request, res: Response) => {
+  res.json({
+    status: 'ok',
+    service: 'FloraScape API',
+    timestamp: new Date().toISOString(),
+    geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
+    runtime: process.env.VERCEL ? 'vercel-serverless' : (process.env.NODE_ENV || 'standalone')
+  });
+});
+
+// ----------------------------------------------------
 // 1. Garden Plan Generation API using gemini-3.8-flash
 // ----------------------------------------------------
 app.post('/api/generate-garden', async (req: Request, res: Response) => {
   try {
+    const ai = getAIClient();
     const preferences = req.body;
     const {
       name,
@@ -277,6 +302,7 @@ Calculate realistic spatial distribution:
 // -------------------------------------------------------------------------
 app.post('/api/generate-image', async (req: Request, res: Response) => {
   try {
+    const ai = getAIClient();
     const { prompt, aspectRatio = '16:9' } = req.body;
 
     if (!prompt) {
@@ -343,6 +369,7 @@ app.post('/api/generate-image', async (req: Request, res: Response) => {
 // -------------------------------------------------------------------------
 app.post('/api/edit-image', async (req: Request, res: Response) => {
   try {
+    const ai = getAIClient();
     const { imageBase64, editPrompt, aspectRatio = '16:9' } = req.body;
 
     if (!imageBase64 || !editPrompt) {
@@ -429,6 +456,7 @@ app.post('/api/edit-image', async (req: Request, res: Response) => {
 // -------------------------------------------------------------------------
 app.post('/api/generate-music', async (req: Request, res: Response) => {
   try {
+    const ai = getAIClient();
     const { prompt, model = 'lyria-3-clip-preview', imageBase64 } = req.body;
 
     if (!prompt) {
@@ -755,6 +783,11 @@ function buildFallbackGardenPlan(preferences: any) {
 // Static / Vite Middleware Setup
 // ----------------------------------------------------
 async function startServer() {
+  // In Vercel serverless environment, the app is handled via serverless functions
+  if (process.env.VERCEL) {
+    return;
+  }
+
   const isProd = process.env.NODE_ENV === 'production';
 
   if (!isProd) {
@@ -777,4 +810,9 @@ async function startServer() {
   });
 }
 
-startServer();
+// Only start the HTTP listener if not running in a Vercel serverless function
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export default app;

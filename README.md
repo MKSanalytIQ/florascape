@@ -179,9 +179,26 @@ Visit `http://localhost:3000` to launch the application.
 
 ---
 
+## 🚀 Deploying to Vercel
+
+FloraScape is fully pre-configured for seamless zero-config deployment to [Vercel](https://vercel.com):
+
+1. **Import Project**: In the Vercel Dashboard, click **Add New...** > **Project** and select `MKSanalytIQ/florascape`.
+2. **Framework Preset**: Vercel will automatically detect `Vite` (defined in `vercel.json`).
+3. **Environment Variables**: In the Vercel project deployment screen, add:
+   - `GEMINI_API_KEY`: Your Google Gemini API Key from [AI Studio](https://aistudio.google.com/).
+4. **Deploy**: Click **Deploy**!
+   - Frontend is compiled with `npm run build` and served at global edge.
+   - Backend APIs (`/api/generate-garden`, `/api/generate-image`, `/api/edit-image`, `/api/generate-music`, `/api/health`) run as auto-scaling Vercel Serverless Functions via `/api/index.ts`.
+
+---
+
 ## 📂 Project Structure
 
 ```
+├── vercel.json                 # Vercel serverless functions & SPA routing configuration
+├── api/
+│   └── index.ts                # Vercel serverless function entry point
 ├── firebase-applet-config.json # Firebase connection credentials
 ├── firebase-blueprint.json     # Intermediate IR schema for Firestore
 ├── firestore.rules             # Hardened Zero-Trust Firestore ABAC rules
