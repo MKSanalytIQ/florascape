@@ -1,0 +1,7 @@
+{
+  "name": "FloraScape - AI Dream Garden Designer",
+  "description": "Design your dream garden with intelligent layouts, plant visuals, zone planning, and AI-powered visual creation and image editing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

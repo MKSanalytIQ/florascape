@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'email']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.email is string && data.email.size() <= 256;
+    }
+
+    function isValidGarden(data) {
+      return data.keys().hasAll(['id', 'userId', 'title', 'style']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() <= 256 &&
+             data.style is string && data.style.size() <= 64;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) && incoming().id == request.auth.uid;
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) && incoming().id == existing().id;
+      allow delete: if false;
+    }
+
+    // Gardens collection
+    match /gardens/{gardenId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(gardenId) && isValidGarden(incoming()) && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(gardenId) && isValidGarden(incoming()) && existing().userId == request.auth.uid && incoming().userId == existing().userId;
+      allow delete: if isSignedIn() && isValidId(gardenId) && existing().userId == request.auth.uid;
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Authenticated user profile",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "photoURL": { "type": "string", "maxLength": 512 },
+        "createdAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "email"]
+    },
+    "Garden": {
+      "title": "Garden",
+      "description": "User created or saved garden design plan",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 256 },
+        "tagline": { "type": "string", "maxLength": 512 },
+        "designNarrative": { "type": "string", "maxLength": 2048 },
+        "style": { "type": "string", "maxLength": 64 },
+        "dimensions": { "type": "object" },
+        "zones": { "type": "array" },
+        "elements": { "type": "array" },
+        "plants": { "type": "array" },
+        "bloomTimeline": { "type": "array" },
+        "companionPairs": { "type": "array" },
+        "shoppingList": { "type": "array" },
+        "maintenanceTips": { "type": "object" },
+        "suggestedImagePrompts": { "type": "array" },
+        "visuals": { "type": "array" },
+        "soundtrack": { "type": "object" },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "userId", "title", "style"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Stores user profile documents keyed by Firebase Auth UID"
+    },
+    "/gardens/{gardenId}": {
+      "schema": "Garden",
+      "description": "Stores custom and saved garden plans owned by authenticated users"
+    }
+  }
+}
